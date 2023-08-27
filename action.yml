@@ -1,19 +1,26 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'GitHub App Auth'
+description: 'GitHub Action which gets an auth token for a repo or organization via a GitHub app installation'
+author: 'David Sanders'
 
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  creds:
+    description: 'A credential bundle for the GitHub app to generate the token for'
     required: true
-    default: '1000'
+  org:
+    description: 'The organization for an org-scoped token'
+    required: false
+  owner:
+    description: 'The repo owner for a repo-scoped token'
+    required: false
+  repo:
+    description: 'The repo name for a repo-scoped token'
+    required: false
 
-# Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  token:
+    description: 'GitHub installation access token'
 
 runs:
-  using: node16
+  using: node20
   main: dist/index.js
+  post: dist/post.js

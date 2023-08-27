@@ -1,5 +1,10 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import * as github from '@actions/github'
+import {
+  appCredentialsFromString,
+  getTokenForOrg,
+  getTokenForRepo
+} from '@electron/github-app-auth'
 
 /**
  * The main function for the action.
@@ -7,18 +12,48 @@ import { wait } from './wait'
  */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    // Required input
+    const creds = core.getInput('creds')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    if (!creds) {
+      core.setFailed("'creds' is a required input")
+      return
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    // Optional inputs
+    const org = core.getInput('org')
+    let owner = core.getInput('owner')
+    let repo = core.getInput('repo')
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    if (org && (owner || repo)) {
+      core.setFailed('Invalid inputs')
+      return
+    } else if (!org && !(owner && repo)) {
+      // Use the current repo as a default
+      if (!owner && !repo) {
+        owner = github.context.repo.owner
+        repo = github.context.repo.repo
+      } else {
+        core.setFailed('Invalid inputs')
+        return
+      }
+    }
+
+    const appCreds = appCredentialsFromString(creds)
+    const token = await (org
+      ? getTokenForOrg(org, appCreds)
+      : getTokenForRepo({ owner, name: repo }, appCreds))
+
+    if (!token) {
+      core.setFailed('Could not generate token')
+      return
+    }
+
+    core.setSecret(token)
+    core.setOutput('token', token)
+
+    // Save token to state so the post function can invalidate
+    core.saveState('token', token)
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

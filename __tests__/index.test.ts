@@ -1,80 +1,245 @@
-/**
- * Unit tests for the action's entrypoint, src/index.ts
- *
- * These should be run as if the action was called from a workflow.
- * Specifically, the inputs listed in `action.yml` should be set as environment
- * variables following the pattern `INPUT_<INPUT_NAME>`.
- */
-
 import * as core from '@actions/core'
+import {
+  appCredentialsFromString,
+  getTokenForOrg,
+  getTokenForRepo
+} from '@electron/github-app-auth'
+
 import * as index from '../src/index'
 
-// Mock the GitHub Actions core library
-const debugMock = jest.spyOn(core, 'debug')
-const getInputMock = jest.spyOn(core, 'getInput')
-const setFailedMock = jest.spyOn(core, 'setFailed')
-const setOutputMock = jest.spyOn(core, 'setOutput')
+jest.mock('@actions/core', () => {
+  return {
+    getInput: jest.fn(),
+    getState: jest.fn(),
+    info: jest.fn(),
+    saveState: jest.fn(),
+    setFailed: jest.fn(),
+    setOutput: jest.fn(),
+    setSecret: jest.fn()
+  }
+})
+jest.mock('@actions/github', () => {
+  return {
+    context: {
+      repo: {
+        owner: 'electron',
+        repo: 'electron'
+      }
+    }
+  }
+})
+jest.mock('@electron/github-app-auth')
 
-// Mock the action's entrypoint
-const runMock = jest.spyOn(index, 'run')
+jest
+  .mocked(appCredentialsFromString)
+  .mockReturnValue({ appId: '12345', privateKey: 'private' })
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
+// Spy the action's entrypoint
+const runSpy = jest.spyOn(index, 'run')
 
 describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('sets the time output', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation((name: string): string => {
-      switch (name) {
-        case 'milliseconds':
-          return '500'
-        default:
-          return ''
-      }
-    })
+  it('requires the creds input', async () => {
+    jest.mocked(core.getInput).mockReturnValue('')
 
     await index.run()
-    expect(runMock).toHaveReturned()
+    expect(runSpy).toHaveReturned()
 
-    // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    expect(debugMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringMatching(timeRegex)
-    )
-    expect(debugMock).toHaveBeenNthCalledWith(
-      3,
-      expect.stringMatching(timeRegex)
-    )
-    expect(setOutputMock).toHaveBeenNthCalledWith(
-      1,
-      'time',
-      expect.stringMatching(timeRegex)
+    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenLastCalledWith(
+      "'creds' is a required input"
     )
   })
 
-  it('sets a failed status', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation((name: string): string => {
+  it('requires both owner and repo inputs if either provided', async () => {
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
+        case 'creds':
+          return 'foobar'
+        case 'owner':
+          return 'electron'
         default:
           return ''
       }
     })
 
     await index.run()
-    expect(runMock).toHaveReturned()
+    expect(runSpy).toHaveReturned()
 
-    // Verify that all of the core library functions were called correctly
-    expect(setFailedMock).toHaveBeenNthCalledWith(
-      1,
-      'milliseconds not a number'
+    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs')
+  })
+
+  it('rejects invalid inputs', async () => {
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'owner':
+          return 'electron'
+        case 'org':
+          return 'electron'
+        default:
+          return ''
+      }
+    })
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs')
+  })
+
+  it('defaults to the current repo on no inputs', async () => {
+    const token = 'repo-token'
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForRepo).mockResolvedValue(token)
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(getTokenForRepo).toHaveBeenCalledTimes(1)
+    expect(getTokenForRepo).toHaveBeenLastCalledWith(
+      { owner: 'electron', name: 'electron' },
+      expect.anything()
     )
+
+    // Marks the token as a secret
+    expect(core.setSecret).toHaveBeenCalledTimes(1)
+    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+
+    // Sets the output
+    expect(core.setOutput).toHaveBeenCalledTimes(1)
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+
+    // Saves the token for invalidation
+    expect(core.saveState).toHaveBeenCalledTimes(1)
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
+  })
+
+  it('generates a repo token', async () => {
+    const token = 'repo-token'
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'owner':
+          return 'electron'
+        case 'repo':
+          return 'fake-repo'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForRepo).mockResolvedValue(token)
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(getTokenForRepo).toHaveBeenCalledTimes(1)
+    expect(getTokenForRepo).toHaveBeenLastCalledWith(
+      { owner: 'electron', name: 'fake-repo' },
+      expect.anything()
+    )
+
+    // Marks the token as a secret
+    expect(core.setSecret).toHaveBeenCalledTimes(1)
+    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+
+    // Sets the output
+    expect(core.setOutput).toHaveBeenCalledTimes(1)
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+
+    // Saves the token for invalidation
+    expect(core.saveState).toHaveBeenCalledTimes(1)
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
+  })
+
+  it('generates an org token', async () => {
+    const token = 'org-token'
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'org':
+          return 'electron'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForOrg).mockResolvedValue(token)
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(getTokenForOrg).toHaveBeenCalledTimes(1)
+    expect(getTokenForOrg).toHaveBeenLastCalledWith(
+      'electron',
+      expect.anything()
+    )
+
+    // Marks the token as a secret
+    expect(core.setSecret).toHaveBeenCalledTimes(1)
+    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+
+    // Sets the output
+    expect(core.setOutput).toHaveBeenCalledTimes(1)
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+
+    // Saves the token for invalidation
+    expect(core.saveState).toHaveBeenCalledTimes(1)
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
+  })
+
+  it('handles token generate failure', async () => {
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'org':
+          return 'electron'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForOrg).mockResolvedValue(null)
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenLastCalledWith('Could not generate token')
+  })
+
+  it('handles an unexpected error', async () => {
+    const message = 'Server Error'
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'org':
+          return 'electron'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForOrg).mockRejectedValue(new Error(message))
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenLastCalledWith(message)
   })
 })
