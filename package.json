@@ -3,13 +3,13 @@
   "description": "GitHub Action which gets an auth token for a repo or organization via a GitHub app installation",
   "version": "0.0.0-development",
   "private": true,
-  "homepage": "https://github.com/dsanders11/github-app-auth-action",
+  "homepage": "https://github.com/electron/github-app-auth-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dsanders11/github-app-auth-action.git"
+    "url": "git+https://github.com/electron/github-app-auth-action.git"
   },
   "bugs": {
-    "url": "https://github.com/dsanders11/github-app-auth-action/issues"
+    "url": "https://github.com/electron/github-app-auth-action/issues"
   },
   "main": "dist/index.js",
   "engines": {

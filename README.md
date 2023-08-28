@@ -1,7 +1,7 @@
 # GitHub App Auth Action
 
-[![GitHub Super-Linter](https://github.com/dsanders11/github-app-auth-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
-[![CI](https://github.com/dsanders11/github-app-auth-action/actions/workflows/ci.yml/badge.svg)](https://github.com/dsanders11/github-app-auth-action/actions/workflows/ci.yml)
+[![GitHub Super-Linter](https://github.com/electron/github-app-auth-action/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+[![CI](https://github.com/electron/github-app-auth-action/actions/workflows/ci.yml/badge.svg)](https://github.com/electron/github-app-auth-action/actions/workflows/ci.yml)
 
 > GitHub Action which gets an auth token for a repo or organization via a
 > GitHub app installation
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
-        uses: dsanders11/github-app-auth-action@v1.0.0
+        uses: electron/github-app-auth-action@v1.0.0
         id: generate-token
         with:
           creds: ${{ secrets.GH_APP_CREDS }}
