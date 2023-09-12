@@ -1,7 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import { GitHub } from '@actions/github/lib/utils'
 import {
   appCredentialsFromString,
+  getAuthOptionsForOrg,
+  getAuthOptionsForRepo,
   getTokenForOrg,
   getTokenForRepo
 } from '@electron/github-app-auth'
@@ -24,6 +27,7 @@ export async function run(): Promise<void> {
     const org = core.getInput('org')
     let owner = core.getInput('owner')
     let repo = core.getInput('repo')
+    const exportGitUser = core.getBooleanInput('export-git-user')
 
     if (org && (owner || repo)) {
       core.setFailed('Invalid inputs')
@@ -54,6 +58,26 @@ export async function run(): Promise<void> {
 
     // Save token to state so the post function can invalidate
     core.saveState('token', token)
+
+    if (exportGitUser) {
+      const authOpts = await (org
+        ? getAuthOptionsForOrg(org, appCreds)
+        : getAuthOptionsForRepo({ owner, name: repo }, appCreds))
+
+      const appOctokit = new GitHub({ ...authOpts })
+
+      const { data: app } = await appOctokit.rest.apps.getAuthenticated()
+      const username = `${app.slug}[bot]`
+      const { data: user } = await appOctokit.rest.users.getByUsername({
+        username
+      })
+      const email = `${user.id}+${app.slug}[bot]@users.noreply.github.com`
+
+      core.exportVariable('GIT_AUTHOR_NAME', username)
+      core.exportVariable('GIT_AUTHOR_EMAIL', email)
+      core.exportVariable('GIT_COMMITTER_NAME', username)
+      core.exportVariable('GIT_COMMITTER_EMAIL', email)
+    }
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)

@@ -50,6 +50,8 @@ jobs:
 - `org` - *(optional)* The organization for an org-scoped token
 - `owner` - *(optional)* The repository owner for a repo-scoped token
 - `repo` - *(optional)* The repository name for a repo-scoped token
+- `export-git-user` - *(optional)* [Export environment variables][git-env-variables]
+  which set the git user to the GitHub app user
 
 ### Outputs
 
@@ -60,3 +62,4 @@ jobs:
 MIT
 
 [generating-cred-bundle]: https://github.com/electron/github-app-auth#generating-credentials
+[git-env-variables]: https://git-scm.com/book/en/v2/Git-Internals-Environment-Variables

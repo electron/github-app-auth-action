@@ -6,9 +6,12 @@ import {
 } from '@electron/github-app-auth'
 
 import * as index from '../src/index'
+import { GitHub } from '@actions/github/lib/utils'
 
 jest.mock('@actions/core', () => {
   return {
+    exportVariable: jest.fn(),
+    getBooleanInput: jest.fn(),
     getInput: jest.fn(),
     getState: jest.fn(),
     info: jest.fn(),
@@ -28,14 +31,34 @@ jest.mock('@actions/github', () => {
     }
   }
 })
+jest.mock('@actions/github/lib/utils')
 jest.mock('@electron/github-app-auth')
 
 jest
   .mocked(appCredentialsFromString)
   .mockReturnValue({ appId: '12345', privateKey: 'private' })
 
+const getAuthenticated = jest.fn()
+const getByUsername = jest.fn()
+
+;(GitHub as unknown as jest.Mock).mockReturnValue({
+  rest: {
+    apps: {
+      getAuthenticated
+    },
+    users: {
+      getByUsername
+    }
+  }
+})
+
 // Spy the action's entrypoint
 const runSpy = jest.spyOn(index, 'run')
+
+const slug = 'my-app'
+const userId = 12345
+const username = `${slug}[bot]`
+const email = `${userId}+${slug}[bot]@users.noreply.github.com`
 
 describe('action', () => {
   beforeEach(() => {
@@ -166,6 +189,49 @@ describe('action', () => {
     expect(core.saveState).toHaveBeenLastCalledWith('token', token)
   })
 
+  it('can export a git user with repo token', async () => {
+    const token = 'repo-token'
+    jest.mocked(core.getBooleanInput).mockReturnValue(true)
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'owner':
+          return 'electron'
+        case 'repo':
+          return 'fake-repo'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForRepo).mockResolvedValue(token)
+    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } })
+    jest.mocked(getByUsername).mockResolvedValue({
+      data: {
+        id: userId
+      }
+    })
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    // Exports git user environment variables
+    expect(core.exportVariable).toHaveBeenCalledTimes(4)
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_AUTHOR_NAME',
+      username
+    )
+    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email)
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_COMMITTER_NAME',
+      username
+    )
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_COMMITTER_EMAIL',
+      email
+    )
+  })
+
   it('generates an org token', async () => {
     const token = 'org-token'
     jest.mocked(core.getInput).mockImplementation((name: string) => {
@@ -200,6 +266,47 @@ describe('action', () => {
     // Saves the token for invalidation
     expect(core.saveState).toHaveBeenCalledTimes(1)
     expect(core.saveState).toHaveBeenLastCalledWith('token', token)
+  })
+
+  it('can export a git user with org token', async () => {
+    const token = 'org-token'
+    jest.mocked(core.getBooleanInput).mockReturnValue(true)
+    jest.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar'
+        case 'org':
+          return 'electron'
+        default:
+          return ''
+      }
+    })
+    jest.mocked(getTokenForOrg).mockResolvedValue(token)
+    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } })
+    jest.mocked(getByUsername).mockResolvedValue({
+      data: {
+        id: userId
+      }
+    })
+
+    await index.run()
+    expect(runSpy).toHaveReturned()
+
+    // Exports git user environment variables
+    expect(core.exportVariable).toHaveBeenCalledTimes(4)
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_AUTHOR_NAME',
+      username
+    )
+    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email)
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_COMMITTER_NAME',
+      username
+    )
+    expect(core.exportVariable).toHaveBeenCalledWith(
+      'GIT_COMMITTER_EMAIL',
+      email
+    )
   })
 
   it('handles token generate failure', async () => {

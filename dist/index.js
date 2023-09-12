@@ -2068,7 +2068,7 @@ var require_core = __commonJS({
       ExitCode2[ExitCode2["Success"] = 0] = "Success";
       ExitCode2[ExitCode2["Failure"] = 1] = "Failure";
     })(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
-    function exportVariable(name, val) {
+    function exportVariable2(name, val) {
       const convertedVal = utils_1.toCommandValue(val);
       process.env[name] = convertedVal;
       const filePath = process.env["GITHUB_ENV"] || "";
@@ -2077,7 +2077,7 @@ var require_core = __commonJS({
       }
       command_1.issueCommand("set-env", { name }, convertedVal);
     }
-    exports.exportVariable = exportVariable;
+    exports.exportVariable = exportVariable2;
     function setSecret2(secret) {
       command_1.issueCommand("add-mask", {}, secret);
     }
@@ -2111,7 +2111,7 @@ var require_core = __commonJS({
       return inputs.map((input) => input.trim());
     }
     exports.getMultilineInput = getMultilineInput;
-    function getBooleanInput(name, options) {
+    function getBooleanInput2(name, options) {
       const trueValue = ["true", "True", "TRUE"];
       const falseValue = ["false", "False", "FALSE"];
       const val = getInput2(name, options);
@@ -2122,7 +2122,7 @@ var require_core = __commonJS({
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}
 Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
     }
-    exports.getBooleanInput = getBooleanInput;
+    exports.getBooleanInput = getBooleanInput2;
     function setOutput2(name, value) {
       const filePath = process.env["GITHUB_OUTPUT"] || "";
       if (filePath) {
@@ -26329,7 +26329,7 @@ var require_dist = __commonJS({
     }
     exports.bundleAppCredentials = bundleAppCredentials;
     async function getTokenForRepo2(repo, appCreds, authNarrowing = {}) {
-      const authOptions = await getAuthOptionsForRepo(repo, appCreds, authNarrowing);
+      const authOptions = await getAuthOptionsForRepo2(repo, appCreds, authNarrowing);
       if (!authOptions)
         return null;
       const { token } = await authOptions.authStrategy(authOptions.auth)(authOptions.auth);
@@ -26337,14 +26337,14 @@ var require_dist = __commonJS({
     }
     exports.getTokenForRepo = getTokenForRepo2;
     async function getTokenForOrg2(org, appCreds, authNarrowing = {}) {
-      const authOptions = await getAuthOptionsForOrg(org, appCreds, authNarrowing);
+      const authOptions = await getAuthOptionsForOrg2(org, appCreds, authNarrowing);
       if (!authOptions)
         return null;
       const { token } = await authOptions.authStrategy(authOptions.auth)(authOptions.auth);
       return token;
     }
     exports.getTokenForOrg = getTokenForOrg2;
-    async function getAuthOptionsForRepo(repo, appCreds, authNarrowing = {}, request) {
+    async function getAuthOptionsForRepo2(repo, appCreds, authNarrowing = {}, request) {
       return await getAuthOptionsForInstallationId(appCreds, authNarrowing, async (octokit) => {
         const installation = await octokit.apps.getRepoInstallation({
           owner: repo.owner,
@@ -26353,8 +26353,8 @@ var require_dist = __commonJS({
         return installation.data.id;
       }, request);
     }
-    exports.getAuthOptionsForRepo = getAuthOptionsForRepo;
-    async function getAuthOptionsForOrg(org, appCreds, authNarrowing = {}, request) {
+    exports.getAuthOptionsForRepo = getAuthOptionsForRepo2;
+    async function getAuthOptionsForOrg2(org, appCreds, authNarrowing = {}, request) {
       return await getAuthOptionsForInstallationId(appCreds, authNarrowing, async (octokit) => {
         const installation = await octokit.apps.getOrgInstallation({
           org
@@ -26362,7 +26362,7 @@ var require_dist = __commonJS({
         return installation.data.id;
       }, request);
     }
-    exports.getAuthOptionsForOrg = getAuthOptionsForOrg;
+    exports.getAuthOptionsForOrg = getAuthOptionsForOrg2;
     async function getAuthOptionsForInstallationId(appCreds, authNarrowing = {}, installationIdFetcher, request) {
       const auth = (0, auth_app_1.createAppAuth)({
         appId: appCreds.appId,
@@ -26400,6 +26400,7 @@ __export(src_exports, {
 module.exports = __toCommonJS(src_exports);
 var core = __toESM(require_core());
 var github = __toESM(require_github());
+var import_utils = __toESM(require_utils4());
 var import_github_app_auth = __toESM(require_dist());
 async function run() {
   try {
@@ -26411,6 +26412,7 @@ async function run() {
     const org = core.getInput("org");
     let owner = core.getInput("owner");
     let repo = core.getInput("repo");
+    const exportGitUser = core.getBooleanInput("export-git-user");
     if (org && (owner || repo)) {
       core.setFailed("Invalid inputs");
       return;
@@ -26432,6 +26434,20 @@ async function run() {
     core.setSecret(token);
     core.setOutput("token", token);
     core.saveState("token", token);
+    if (exportGitUser) {
+      const authOpts = await (org ? (0, import_github_app_auth.getAuthOptionsForOrg)(org, appCreds) : (0, import_github_app_auth.getAuthOptionsForRepo)({ owner, name: repo }, appCreds));
+      const appOctokit = new import_utils.GitHub({ ...authOpts });
+      const { data: app } = await appOctokit.rest.apps.getAuthenticated();
+      const username = `${app.slug}[bot]`;
+      const { data: user } = await appOctokit.rest.users.getByUsername({
+        username
+      });
+      const email = `${user.id}+${app.slug}[bot]@users.noreply.github.com`;
+      core.exportVariable("GIT_AUTHOR_NAME", username);
+      core.exportVariable("GIT_AUTHOR_EMAIL", email);
+      core.exportVariable("GIT_COMMITTER_NAME", username);
+      core.exportVariable("GIT_COMMITTER_EMAIL", email);
+    }
   } catch (error) {
     if (error instanceof Error)
       core.setFailed(error.message);

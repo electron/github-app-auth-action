@@ -15,6 +15,9 @@ inputs:
   repo:
     description: 'The repo name for a repo-scoped token'
     required: false
+  export-git-user:
+    description: 'Export environment variables which set the git user to the GitHub app user'
+    required: false
 
 outputs:
   token:
