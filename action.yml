@@ -18,6 +18,7 @@ inputs:
   export-git-user:
     description: 'Export environment variables which set the git user to the GitHub app user'
     required: false
+    default: false
 
 outputs:
   token:
