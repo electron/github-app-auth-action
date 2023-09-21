@@ -1,12 +1,12 @@
-import * as core from '@actions/core'
+import * as core from '@actions/core';
 import {
   appCredentialsFromString,
   getTokenForOrg,
   getTokenForRepo
-} from '@electron/github-app-auth'
+} from '@electron/github-app-auth';
 
-import * as index from '../src/index'
-import { GitHub } from '@actions/github/lib/utils'
+import * as index from '../src/index';
+import { GitHub } from '@actions/github/lib/utils';
 
 jest.mock('@actions/core', () => {
   return {
@@ -19,8 +19,8 @@ jest.mock('@actions/core', () => {
     setFailed: jest.fn(),
     setOutput: jest.fn(),
     setSecret: jest.fn()
-  }
-})
+  };
+});
 jest.mock('@actions/github', () => {
   return {
     context: {
@@ -29,19 +29,19 @@ jest.mock('@actions/github', () => {
         repo: 'electron'
       }
     }
-  }
-})
-jest.mock('@actions/github/lib/utils')
-jest.mock('@electron/github-app-auth')
+  };
+});
+jest.mock('@actions/github/lib/utils');
+jest.mock('@electron/github-app-auth');
 
 jest
   .mocked(appCredentialsFromString)
-  .mockReturnValue({ appId: '12345', privateKey: 'private' })
+  .mockReturnValue({ appId: '12345', privateKey: 'private' });
 
-const getAuthenticated = jest.fn()
-const getByUsername = jest.fn()
+const getAuthenticated = jest.fn();
+const getByUsername = jest.fn();
 
-;(GitHub as unknown as jest.Mock).mockReturnValue({
+(GitHub as unknown as jest.Mock).mockReturnValue({
   rest: {
     apps: {
       getAuthenticated
@@ -50,303 +50,303 @@ const getByUsername = jest.fn()
       getByUsername
     }
   }
-})
+});
 
 // Spy the action's entrypoint
-const runSpy = jest.spyOn(index, 'run')
+const runSpy = jest.spyOn(index, 'run');
 
-const slug = 'my-app'
-const userId = 12345
-const username = `${slug}[bot]`
-const email = `${userId}+${slug}[bot]@users.noreply.github.com`
+const slug = 'my-app';
+const userId = 12345;
+const username = `${slug}[bot]`;
+const email = `${userId}+${slug}[bot]@users.noreply.github.com`;
 
 describe('action', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-  })
+    jest.clearAllMocks();
+  });
 
   it('requires the creds input', async () => {
-    jest.mocked(core.getInput).mockReturnValue('')
+    jest.mocked(core.getInput).mockReturnValue('');
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(core.setFailed).toHaveBeenCalledTimes(1)
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
     expect(core.setFailed).toHaveBeenLastCalledWith(
       "'creds' is a required input"
-    )
-  })
+    );
+  });
 
   it('requires both owner and repo inputs if either provided', async () => {
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'owner':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
+    });
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(core.setFailed).toHaveBeenCalledTimes(1)
-    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs')
-  })
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs');
+  });
 
   it('rejects invalid inputs', async () => {
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'owner':
-          return 'electron'
+          return 'electron';
         case 'org':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
+    });
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(core.setFailed).toHaveBeenCalledTimes(1)
-    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs')
-  })
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith('Invalid inputs');
+  });
 
   it('defaults to the current repo on no inputs', async () => {
-    const token = 'repo-token'
+    const token = 'repo-token';
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForRepo).mockResolvedValue(token)
+    });
+    jest.mocked(getTokenForRepo).mockResolvedValue(token);
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(getTokenForRepo).toHaveBeenCalledTimes(1)
+    expect(getTokenForRepo).toHaveBeenCalledTimes(1);
     expect(getTokenForRepo).toHaveBeenLastCalledWith(
       { owner: 'electron', name: 'electron' },
       expect.anything()
-    )
+    );
 
     // Marks the token as a secret
-    expect(core.setSecret).toHaveBeenCalledTimes(1)
-    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+    expect(core.setSecret).toHaveBeenCalledTimes(1);
+    expect(core.setSecret).toHaveBeenLastCalledWith(token);
 
     // Sets the output
-    expect(core.setOutput).toHaveBeenCalledTimes(1)
-    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token);
 
     // Saves the token for invalidation
-    expect(core.saveState).toHaveBeenCalledTimes(1)
-    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
-  })
+    expect(core.saveState).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token);
+  });
 
   it('generates a repo token', async () => {
-    const token = 'repo-token'
+    const token = 'repo-token';
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'owner':
-          return 'electron'
+          return 'electron';
         case 'repo':
-          return 'fake-repo'
+          return 'fake-repo';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForRepo).mockResolvedValue(token)
+    });
+    jest.mocked(getTokenForRepo).mockResolvedValue(token);
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(getTokenForRepo).toHaveBeenCalledTimes(1)
+    expect(getTokenForRepo).toHaveBeenCalledTimes(1);
     expect(getTokenForRepo).toHaveBeenLastCalledWith(
       { owner: 'electron', name: 'fake-repo' },
       expect.anything()
-    )
+    );
 
     // Marks the token as a secret
-    expect(core.setSecret).toHaveBeenCalledTimes(1)
-    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+    expect(core.setSecret).toHaveBeenCalledTimes(1);
+    expect(core.setSecret).toHaveBeenLastCalledWith(token);
 
     // Sets the output
-    expect(core.setOutput).toHaveBeenCalledTimes(1)
-    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token);
 
     // Saves the token for invalidation
-    expect(core.saveState).toHaveBeenCalledTimes(1)
-    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
-  })
+    expect(core.saveState).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token);
+  });
 
   it('can export a git user with repo token', async () => {
-    const token = 'repo-token'
-    jest.mocked(core.getBooleanInput).mockReturnValue(true)
+    const token = 'repo-token';
+    jest.mocked(core.getBooleanInput).mockReturnValue(true);
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'owner':
-          return 'electron'
+          return 'electron';
         case 'repo':
-          return 'fake-repo'
+          return 'fake-repo';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForRepo).mockResolvedValue(token)
-    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } })
+    });
+    jest.mocked(getTokenForRepo).mockResolvedValue(token);
+    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
     jest.mocked(getByUsername).mockResolvedValue({
       data: {
         id: userId
       }
-    })
+    });
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
     // Exports git user environment variables
-    expect(core.exportVariable).toHaveBeenCalledTimes(4)
+    expect(core.exportVariable).toHaveBeenCalledTimes(4);
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_AUTHOR_NAME',
       username
-    )
-    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email)
+    );
+    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email);
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_COMMITTER_NAME',
       username
-    )
+    );
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_COMMITTER_EMAIL',
       email
-    )
-  })
+    );
+  });
 
   it('generates an org token', async () => {
-    const token = 'org-token'
+    const token = 'org-token';
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'org':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForOrg).mockResolvedValue(token)
+    });
+    jest.mocked(getTokenForOrg).mockResolvedValue(token);
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(getTokenForOrg).toHaveBeenCalledTimes(1)
+    expect(getTokenForOrg).toHaveBeenCalledTimes(1);
     expect(getTokenForOrg).toHaveBeenLastCalledWith(
       'electron',
       expect.anything()
-    )
+    );
 
     // Marks the token as a secret
-    expect(core.setSecret).toHaveBeenCalledTimes(1)
-    expect(core.setSecret).toHaveBeenLastCalledWith(token)
+    expect(core.setSecret).toHaveBeenCalledTimes(1);
+    expect(core.setSecret).toHaveBeenLastCalledWith(token);
 
     // Sets the output
-    expect(core.setOutput).toHaveBeenCalledTimes(1)
-    expect(core.setOutput).toHaveBeenLastCalledWith('token', token)
+    expect(core.setOutput).toHaveBeenCalledTimes(1);
+    expect(core.setOutput).toHaveBeenLastCalledWith('token', token);
 
     // Saves the token for invalidation
-    expect(core.saveState).toHaveBeenCalledTimes(1)
-    expect(core.saveState).toHaveBeenLastCalledWith('token', token)
-  })
+    expect(core.saveState).toHaveBeenCalledTimes(1);
+    expect(core.saveState).toHaveBeenLastCalledWith('token', token);
+  });
 
   it('can export a git user with org token', async () => {
-    const token = 'org-token'
-    jest.mocked(core.getBooleanInput).mockReturnValue(true)
+    const token = 'org-token';
+    jest.mocked(core.getBooleanInput).mockReturnValue(true);
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'org':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForOrg).mockResolvedValue(token)
-    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } })
+    });
+    jest.mocked(getTokenForOrg).mockResolvedValue(token);
+    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
     jest.mocked(getByUsername).mockResolvedValue({
       data: {
         id: userId
       }
-    })
+    });
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
     // Exports git user environment variables
-    expect(core.exportVariable).toHaveBeenCalledTimes(4)
+    expect(core.exportVariable).toHaveBeenCalledTimes(4);
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_AUTHOR_NAME',
       username
-    )
-    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email)
+    );
+    expect(core.exportVariable).toHaveBeenCalledWith('GIT_AUTHOR_EMAIL', email);
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_COMMITTER_NAME',
       username
-    )
+    );
     expect(core.exportVariable).toHaveBeenCalledWith(
       'GIT_COMMITTER_EMAIL',
       email
-    )
-  })
+    );
+  });
 
   it('handles token generate failure', async () => {
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'org':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForOrg).mockResolvedValue(null)
+    });
+    jest.mocked(getTokenForOrg).mockResolvedValue(null);
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(core.setFailed).toHaveBeenCalledTimes(1)
-    expect(core.setFailed).toHaveBeenLastCalledWith('Could not generate token')
-  })
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith('Could not generate token');
+  });
 
   it('handles an unexpected error', async () => {
-    const message = 'Server Error'
+    const message = 'Server Error';
     jest.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
-          return 'foobar'
+          return 'foobar';
         case 'org':
-          return 'electron'
+          return 'electron';
         default:
-          return ''
+          return '';
       }
-    })
-    jest.mocked(getTokenForOrg).mockRejectedValue(new Error(message))
+    });
+    jest.mocked(getTokenForOrg).mockRejectedValue(new Error(message));
 
-    await index.run()
-    expect(runSpy).toHaveReturned()
+    await index.run();
+    expect(runSpy).toHaveReturned();
 
-    expect(core.setFailed).toHaveBeenCalledTimes(1)
-    expect(core.setFailed).toHaveBeenLastCalledWith(message)
-  })
-})
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith(message);
+  });
+});

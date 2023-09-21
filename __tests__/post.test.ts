@@ -1,9 +1,9 @@
-import * as core from '@actions/core'
-import * as github from '@actions/github'
+import * as core from '@actions/core';
+import * as github from '@actions/github';
 
-import * as post from '../src/post'
+import * as post from '../src/post';
 
-const revokeInstallationAccessToken = jest.fn()
+const revokeInstallationAccessToken = jest.fn();
 
 jest.mock('@actions/core', () => {
   return {
@@ -15,8 +15,8 @@ jest.mock('@actions/core', () => {
     setOutput: jest.fn(),
     setSecret: jest.fn(),
     warning: jest.fn()
-  }
-})
+  };
+});
 jest.mock('@actions/github', () => {
   return {
     getOctokit: jest.fn(() => ({
@@ -26,51 +26,51 @@ jest.mock('@actions/github', () => {
         }
       }
     }))
-  }
-})
+  };
+});
 
 // Spy the action's post function
-const postSpy = jest.spyOn(post, 'post')
+const postSpy = jest.spyOn(post, 'post');
 
 describe('post', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-  })
+    jest.clearAllMocks();
+  });
 
   it('invalidates the token', async () => {
-    const token = 'gha_token'
-    jest.mocked(core.getState).mockReturnValue(token)
+    const token = 'gha_token';
+    jest.mocked(core.getState).mockReturnValue(token);
 
-    await post.post()
-    expect(postSpy).toHaveReturned()
+    await post.post();
+    expect(postSpy).toHaveReturned();
 
-    expect(github.getOctokit).toHaveBeenCalledWith(token)
-    expect(revokeInstallationAccessToken).toHaveBeenCalledTimes(1)
-  })
+    expect(github.getOctokit).toHaveBeenCalledWith(token);
+    expect(revokeInstallationAccessToken).toHaveBeenCalledTimes(1);
+  });
 
   it('does nothing if no token was generated', async () => {
-    jest.mocked(core.getState).mockReturnValue('')
+    jest.mocked(core.getState).mockReturnValue('');
 
-    await post.post()
-    expect(postSpy).toHaveReturned()
+    await post.post();
+    expect(postSpy).toHaveReturned();
 
-    expect(github.getOctokit).not.toHaveBeenCalled()
-  })
+    expect(github.getOctokit).not.toHaveBeenCalled();
+  });
 
   it('handles any errors', async () => {
-    const token = 'gha_token'
-    const error = new Error('Invalid token')
-    jest.mocked(core.getState).mockReturnValue(token)
+    const token = 'gha_token';
+    const error = new Error('Invalid token');
+    jest.mocked(core.getState).mockReturnValue(token);
     jest.mocked(revokeInstallationAccessToken).mockImplementation(() => {
-      throw error
-    })
+      throw error;
+    });
 
-    await post.post()
-    expect(postSpy).toHaveReturned()
+    await post.post();
+    expect(postSpy).toHaveReturned();
 
-    expect(github.getOctokit).toHaveBeenCalledWith(token)
+    expect(github.getOctokit).toHaveBeenCalledWith(token);
     expect(core.warning).toHaveBeenCalledWith(
       `Error while revoking token: ${error.message}`
-    )
-  })
-})
+    );
+  });
+});
