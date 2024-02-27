@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
-        uses: electron/github-app-auth-action@main
+        uses: electron/github-app-auth-action@v1.1.1
         id: generate-token
         with:
           creds: ${{ secrets.GH_APP_CREDS }}
