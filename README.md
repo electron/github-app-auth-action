@@ -26,12 +26,10 @@ input.
 jobs:
   issue-commented:
     name: Remove label on comment
-    permissions:
-      issues: write
     runs-on: ubuntu-latest
     steps:
       - name: Generate GitHub App token
-        uses: electron/github-app-auth-action@v1.0.0
+        uses: electron/github-app-auth-action@main
         id: generate-token
         with:
           creds: ${{ secrets.GH_APP_CREDS }}
