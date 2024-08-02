@@ -49,7 +49,7 @@ jobs:
 - `owner` - *(optional)* The repository owner for a repo-scoped token
 - `repo` - *(optional)* The repository name for a repo-scoped token
 - `export-git-user` - *(optional)* [Export environment variables][git-env-variables]
-  which set the git user to the GitHub app user
+  which set the Git user to the GitHub app user
 
 ### Outputs
 
