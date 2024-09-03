@@ -1,10 +1,13 @@
 name: 'GitHub App Auth'
-description: 'GitHub Action which gets an auth token for a repo or organization via a GitHub app installation'
+description:
+  'GitHub Action which gets an auth token for a repo or organization via a
+  GitHub app installation'
 author: 'David Sanders'
 
 inputs:
   creds:
-    description: 'A credential bundle for the GitHub app to generate the token for'
+    description:
+      'A credential bundle for the GitHub app to generate the token for'
     required: true
   org:
     description: 'The organization for an org-scoped token'
@@ -16,7 +19,9 @@ inputs:
     description: 'The repo name for a repo-scoped token'
     required: false
   export-git-user:
-    description: 'Export environment variables which set the git user to the GitHub app user'
+    description:
+      'Export environment variables which set the git user to the GitHub app
+      user'
     required: false
     default: false
 
