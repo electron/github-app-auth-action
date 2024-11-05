@@ -18,8 +18,8 @@
   "scripts": {
     "bundle": "npm run format:write && npm run package",
     "ci-test": "jest",
-    "format:write": "prettier --write '**/*.ts'",
-    "format:check": "prettier --check '**/*.ts'",
+    "format:write": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
     "package": "esbuild src/index.js src/post.js --bundle --outdir=dist --platform=node --target=node20.2",
     "package:watch": "npm run package -- --watch",
