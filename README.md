@@ -14,9 +14,11 @@ instructions][generating-cred-bundle] and provided as the `creds` input.
 - To generate an org-scoped token, provide only the `org` input
 - To generate a repo-scoped token, provide `owner` and `repo` inputs
 
-> [!NOTE] By default the `owner` and `repo` inputs refer to the current
-> repository, so they do not need to be provided unless the token is needed for
-> a different repository.
+> [!NOTE]
+>
+> By default the `owner` and `repo` inputs refer to the current repository, so
+> they do not need to be provided unless the token is needed for a different
+> repository.
 
 ### Example
 
