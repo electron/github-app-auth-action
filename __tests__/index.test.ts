@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as core from '@actions/core';
 import {
   appCredentialsFromString,
@@ -8,20 +10,20 @@ import {
 import * as index from '../src/index';
 import { GitHub } from '@actions/github/lib/utils';
 
-jest.mock('@actions/core', () => {
+vi.mock('@actions/core', () => {
   return {
-    exportVariable: jest.fn(),
-    getBooleanInput: jest.fn(),
-    getInput: jest.fn(),
-    getState: jest.fn(),
-    info: jest.fn(),
-    saveState: jest.fn(),
-    setFailed: jest.fn(),
-    setOutput: jest.fn(),
-    setSecret: jest.fn()
+    exportVariable: vi.fn(),
+    getBooleanInput: vi.fn(),
+    getInput: vi.fn(),
+    getState: vi.fn(),
+    info: vi.fn(),
+    saveState: vi.fn(),
+    setFailed: vi.fn(),
+    setOutput: vi.fn(),
+    setSecret: vi.fn()
   };
 });
-jest.mock('@actions/github', () => {
+vi.mock('@actions/github', () => {
   return {
     context: {
       repo: {
@@ -31,17 +33,18 @@ jest.mock('@actions/github', () => {
     }
   };
 });
-jest.mock('@actions/github/lib/utils');
-jest.mock('@electron/github-app-auth');
+vi.mock('@actions/github/lib/utils');
+vi.mock('@electron/github-app-auth');
 
-jest
-  .mocked(appCredentialsFromString)
-  .mockReturnValue({ appId: '12345', privateKey: 'private' });
+vi.mocked(appCredentialsFromString).mockReturnValue({
+  appId: '12345',
+  privateKey: 'private'
+});
 
-const getAuthenticated = jest.fn();
-const getByUsername = jest.fn();
+const getAuthenticated = vi.fn();
+const getByUsername = vi.fn();
 
-(GitHub as unknown as jest.Mock).mockReturnValue({
+vi.mocked(GitHub).mockReturnValue({
   rest: {
     apps: {
       getAuthenticated
@@ -50,10 +53,10 @@ const getByUsername = jest.fn();
       getByUsername
     }
   }
-});
+} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
 // Spy the action's entrypoint
-const runSpy = jest.spyOn(index, 'run');
+const runSpy = vi.spyOn(index, 'run');
 
 const slug = 'my-app';
 const userId = 12345;
@@ -62,11 +65,11 @@ const email = `${userId}+${slug}[bot]@users.noreply.github.com`;
 
 describe('action', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('requires the creds input', async () => {
-    jest.mocked(core.getInput).mockReturnValue('');
+    vi.mocked(core.getInput).mockReturnValue('');
 
     await index.run();
     expect(runSpy).toHaveReturned();
@@ -78,7 +81,7 @@ describe('action', () => {
   });
 
   it('requires both owner and repo inputs if either provided', async () => {
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -97,7 +100,7 @@ describe('action', () => {
   });
 
   it('rejects invalid inputs', async () => {
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -119,7 +122,7 @@ describe('action', () => {
 
   it('defaults to the current repo on no inputs', async () => {
     const token = 'repo-token';
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -127,7 +130,7 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForRepo).mockResolvedValue(token);
+    vi.mocked(getTokenForRepo).mockResolvedValue(token);
 
     await index.run();
     expect(runSpy).toHaveReturned();
@@ -153,7 +156,7 @@ describe('action', () => {
 
   it('generates a repo token', async () => {
     const token = 'repo-token';
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -165,7 +168,7 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForRepo).mockResolvedValue(token);
+    vi.mocked(getTokenForRepo).mockResolvedValue(token);
 
     await index.run();
     expect(runSpy).toHaveReturned();
@@ -191,8 +194,8 @@ describe('action', () => {
 
   it('can export a git user with repo token', async () => {
     const token = 'repo-token';
-    jest.mocked(core.getBooleanInput).mockReturnValue(true);
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getBooleanInput).mockReturnValue(true);
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -204,9 +207,9 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForRepo).mockResolvedValue(token);
-    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
-    jest.mocked(getByUsername).mockResolvedValue({
+    vi.mocked(getTokenForRepo).mockResolvedValue(token);
+    vi.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
+    vi.mocked(getByUsername).mockResolvedValue({
       data: {
         id: userId
       }
@@ -234,7 +237,7 @@ describe('action', () => {
 
   it('generates an org token', async () => {
     const token = 'org-token';
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -244,7 +247,7 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForOrg).mockResolvedValue(token);
+    vi.mocked(getTokenForOrg).mockResolvedValue(token);
 
     await index.run();
     expect(runSpy).toHaveReturned();
@@ -270,8 +273,8 @@ describe('action', () => {
 
   it('can export a git user with org token', async () => {
     const token = 'org-token';
-    jest.mocked(core.getBooleanInput).mockReturnValue(true);
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getBooleanInput).mockReturnValue(true);
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -281,9 +284,9 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForOrg).mockResolvedValue(token);
-    jest.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
-    jest.mocked(getByUsername).mockResolvedValue({
+    vi.mocked(getTokenForOrg).mockResolvedValue(token);
+    vi.mocked(getAuthenticated).mockResolvedValue({ data: { slug } });
+    vi.mocked(getByUsername).mockResolvedValue({
       data: {
         id: userId
       }
@@ -310,7 +313,7 @@ describe('action', () => {
   });
 
   it('handles token generate failure', async () => {
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -320,7 +323,7 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForOrg).mockResolvedValue(null);
+    vi.mocked(getTokenForOrg).mockResolvedValue(null);
 
     await index.run();
     expect(runSpy).toHaveReturned();
@@ -331,7 +334,7 @@ describe('action', () => {
 
   it('handles an unexpected error', async () => {
     const message = 'Server Error';
-    jest.mocked(core.getInput).mockImplementation((name: string) => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
       switch (name) {
         case 'creds':
           return 'foobar';
@@ -341,7 +344,7 @@ describe('action', () => {
           return '';
       }
     });
-    jest.mocked(getTokenForOrg).mockRejectedValue(new Error(message));
+    vi.mocked(getTokenForOrg).mockRejectedValue(new Error(message));
 
     await index.run();
     expect(runSpy).toHaveReturned();

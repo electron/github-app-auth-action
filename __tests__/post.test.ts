@@ -1,25 +1,27 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
 import * as post from '../src/post';
 
-const revokeInstallationAccessToken = jest.fn();
+const revokeInstallationAccessToken = vi.fn();
 
-jest.mock('@actions/core', () => {
+vi.mock('@actions/core', () => {
   return {
-    getInput: jest.fn(),
-    getState: jest.fn(),
-    info: jest.fn(),
-    saveState: jest.fn(),
-    setFailed: jest.fn(),
-    setOutput: jest.fn(),
-    setSecret: jest.fn(),
-    warning: jest.fn()
+    getInput: vi.fn(),
+    getState: vi.fn(),
+    info: vi.fn(),
+    saveState: vi.fn(),
+    setFailed: vi.fn(),
+    setOutput: vi.fn(),
+    setSecret: vi.fn(),
+    warning: vi.fn()
   };
 });
-jest.mock('@actions/github', () => {
+vi.mock('@actions/github', () => {
   return {
-    getOctokit: jest.fn(() => ({
+    getOctokit: vi.fn(() => ({
       rest: {
         apps: {
           revokeInstallationAccessToken
@@ -30,16 +32,16 @@ jest.mock('@actions/github', () => {
 });
 
 // Spy the action's post function
-const postSpy = jest.spyOn(post, 'post');
+const postSpy = vi.spyOn(post, 'post');
 
 describe('post', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('invalidates the token', async () => {
     const token = 'gha_token';
-    jest.mocked(core.getState).mockReturnValue(token);
+    vi.mocked(core.getState).mockReturnValue(token);
 
     await post.post();
     expect(postSpy).toHaveReturned();
@@ -49,7 +51,7 @@ describe('post', () => {
   });
 
   it('does nothing if no token was generated', async () => {
-    jest.mocked(core.getState).mockReturnValue('');
+    vi.mocked(core.getState).mockReturnValue('');
 
     await post.post();
     expect(postSpy).toHaveReturned();
@@ -60,8 +62,8 @@ describe('post', () => {
   it('handles any errors', async () => {
     const token = 'gha_token';
     const error = new Error('Invalid token');
-    jest.mocked(core.getState).mockReturnValue(token);
-    jest.mocked(revokeInstallationAccessToken).mockImplementation(() => {
+    vi.mocked(core.getState).mockReturnValue(token);
+    vi.mocked(revokeInstallationAccessToken).mockImplementation(() => {
       throw error;
     });
 
