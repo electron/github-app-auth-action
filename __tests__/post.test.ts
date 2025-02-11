@@ -7,18 +7,7 @@ import * as post from '../src/post';
 
 const revokeInstallationAccessToken = vi.fn();
 
-vi.mock('@actions/core', () => {
-  return {
-    getInput: vi.fn(),
-    getState: vi.fn(),
-    info: vi.fn(),
-    saveState: vi.fn(),
-    setFailed: vi.fn(),
-    setOutput: vi.fn(),
-    setSecret: vi.fn(),
-    warning: vi.fn()
-  };
-});
+vi.mock('@actions/core');
 vi.mock('@actions/github', () => {
   return {
     getOctokit: vi.fn(() => ({

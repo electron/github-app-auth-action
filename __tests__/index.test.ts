@@ -10,19 +10,7 @@ import {
 import * as index from '../src/index';
 import { GitHub } from '@actions/github/lib/utils';
 
-vi.mock('@actions/core', () => {
-  return {
-    exportVariable: vi.fn(),
-    getBooleanInput: vi.fn(),
-    getInput: vi.fn(),
-    getState: vi.fn(),
-    info: vi.fn(),
-    saveState: vi.fn(),
-    setFailed: vi.fn(),
-    setOutput: vi.fn(),
-    setSecret: vi.fn()
-  };
-});
+vi.mock('@actions/core');
 vi.mock('@actions/github', () => {
   return {
     context: {
