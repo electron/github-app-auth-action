@@ -30,8 +30,8 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1",
-    "@electron/github-app-auth": "^2.2.1"
+    "@actions/github": "^6.0.0",
+    "@electron/github-app-auth": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.5.6",
