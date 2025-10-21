@@ -41,6 +41,7 @@
     "esbuild": "^0.25.0",
     "eslint": "^8.48.0",
     "eslint-plugin-github": "^4.9.2",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsonc": "^2.9.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-vitest": "^0.5.4",
