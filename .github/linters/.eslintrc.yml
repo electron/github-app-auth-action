@@ -33,6 +33,10 @@ extends:
   - plugin:github/recommended
   - plugin:vitest/legacy-recommended
 
+settings:
+  import/resolver:
+    typescript: true
+
 rules:
   {
     'camelcase': 'off',
