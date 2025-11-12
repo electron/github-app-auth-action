@@ -32,16 +32,18 @@ vi.mocked(appCredentialsFromString).mockReturnValue({
 const getAuthenticated = vi.fn();
 const getByUsername = vi.fn();
 
-vi.mocked(GitHub).mockReturnValue({
-  rest: {
-    apps: {
-      getAuthenticated
-    },
-    users: {
-      getByUsername
-    }
-  }
-} as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+vi.mocked(GitHub).mockImplementation(
+  class {
+    rest = {
+      apps: {
+        getAuthenticated
+      },
+      users: {
+        getByUsername
+      }
+    };
+  } as unknown as typeof GitHub
+);
 
 // Spy the action's entrypoint
 const runSpy = vi.spyOn(index, 'run');
