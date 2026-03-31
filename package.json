@@ -20,7 +20,7 @@
     "ci-test": "vitest run --coverage --reporter=verbose",
     "format:write": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
+    "lint": "eslint . -c ./.github/linters/.eslintrc.yml",
     "package": "esbuild src/index.js src/post.js --bundle --outdir=dist --platform=node --target=node24",
     "package:watch": "yarn package --watch",
     "test": "vitest run --coverage --reporter=verbose",
