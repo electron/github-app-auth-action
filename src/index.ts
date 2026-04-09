@@ -67,6 +67,9 @@ export async function run(): Promise<void> {
       const appOctokit = new GitHub({ ...authOpts });
 
       const { data: app } = await appOctokit.rest.apps.getAuthenticated();
+      if (!app) {
+        throw new Error('Failed to fetch authenticated app');
+      }
       const username = `${app.slug}[bot]`;
       const { data: user } = await appOctokit.rest.users.getByUsername({
         username
