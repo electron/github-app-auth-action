@@ -9,7 +9,7 @@ import {
   getTokenForOrg,
   getTokenForRepo
 } from '@electron/github-app-auth';
-import * as yaml from 'js-yaml';
+import * as YAML from 'yaml';
 
 const PERMISSION_LEVELS = new Set(['read', 'write', 'admin']);
 
@@ -28,7 +28,7 @@ export function parsePermissionsInput(
 
   let parsed: unknown;
   try {
-    parsed = yaml.load(input);
+    parsed = YAML.parse(input);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new Error(`Could not parse permissions as YAML: ${message}`);
