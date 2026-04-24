@@ -128,7 +128,8 @@ describe('action', () => {
     expect(getTokenForRepo).toHaveBeenCalledTimes(1);
     expect(getTokenForRepo).toHaveBeenLastCalledWith(
       { owner: 'electron', name: 'electron' },
-      expect.anything()
+      expect.anything(),
+      {}
     );
 
     // Marks the token as a secret
@@ -166,7 +167,8 @@ describe('action', () => {
     expect(getTokenForRepo).toHaveBeenCalledTimes(1);
     expect(getTokenForRepo).toHaveBeenLastCalledWith(
       { owner: 'electron', name: 'fake-repo' },
-      expect.anything()
+      expect.anything(),
+      {}
     );
 
     // Marks the token as a secret
@@ -245,7 +247,8 @@ describe('action', () => {
     expect(getTokenForOrg).toHaveBeenCalledTimes(1);
     expect(getTokenForOrg).toHaveBeenLastCalledWith(
       'electron',
-      expect.anything()
+      expect.anything(),
+      {}
     );
 
     // Marks the token as a secret
@@ -341,5 +344,158 @@ describe('action', () => {
 
     expect(core.setFailed).toHaveBeenCalledTimes(1);
     expect(core.setFailed).toHaveBeenLastCalledWith(message);
+  });
+
+  it('narrows permissions on a repo token', async () => {
+    const token = 'repo-token';
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar';
+        case 'owner':
+          return 'electron';
+        case 'repo':
+          return 'fake-repo';
+        case 'permissions':
+          return 'contents: read\nissues: write\n';
+        default:
+          return '';
+      }
+    });
+    vi.mocked(getTokenForRepo).mockResolvedValue(token);
+
+    await index.run();
+    expect(runSpy).toHaveReturned();
+
+    expect(getTokenForRepo).toHaveBeenLastCalledWith(
+      { owner: 'electron', name: 'fake-repo' },
+      expect.anything(),
+      { permissions: { contents: 'read', issues: 'write' } }
+    );
+  });
+
+  it('narrows permissions on an org token', async () => {
+    const token = 'org-token';
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar';
+        case 'org':
+          return 'electron';
+        case 'permissions':
+          return 'contents: read';
+        default:
+          return '';
+      }
+    });
+    vi.mocked(getTokenForOrg).mockResolvedValue(token);
+
+    await index.run();
+    expect(runSpy).toHaveReturned();
+
+    expect(getTokenForOrg).toHaveBeenLastCalledWith(
+      'electron',
+      expect.anything(),
+      {
+        permissions: { contents: 'read' }
+      }
+    );
+  });
+
+  it('rejects invalid permission levels', async () => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar';
+        case 'org':
+          return 'electron';
+        case 'permissions':
+          return 'contents: bogus';
+        default:
+          return '';
+      }
+    });
+
+    await index.run();
+    expect(runSpy).toHaveReturned();
+
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith(
+      expect.stringContaining('Invalid permission level')
+    );
+    expect(getTokenForOrg).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-mapping permissions input', async () => {
+    vi.mocked(core.getInput).mockImplementation((name: string) => {
+      switch (name) {
+        case 'creds':
+          return 'foobar';
+        case 'org':
+          return 'electron';
+        case 'permissions':
+          // A bare scalar parses to a string, which isn't a mapping.
+          return 'just-a-scalar';
+        default:
+          return '';
+      }
+    });
+
+    await index.run();
+    expect(runSpy).toHaveReturned();
+
+    expect(core.setFailed).toHaveBeenCalledTimes(1);
+    expect(core.setFailed).toHaveBeenLastCalledWith(
+      expect.stringContaining('YAML mapping')
+    );
+    expect(getTokenForOrg).not.toHaveBeenCalled();
+  });
+});
+
+describe('parsePermissionsInput', () => {
+  it('returns undefined for empty input', () => {
+    expect(index.parsePermissionsInput('')).toBeUndefined();
+    expect(index.parsePermissionsInput('   \n  ')).toBeUndefined();
+  });
+
+  it('parses a single permission', () => {
+    expect(index.parsePermissionsInput('contents: read')).toEqual({
+      contents: 'read'
+    });
+  });
+
+  it('parses multiple permissions across newlines', () => {
+    expect(
+      index.parsePermissionsInput('contents: read\nissues: write\n')
+    ).toEqual({ contents: 'read', issues: 'write' });
+  });
+
+  it('ignores blank lines and YAML comments', () => {
+    expect(
+      index.parsePermissionsInput(
+        '# leading comment\n\ncontents: read  # trailing\n'
+      )
+    ).toEqual({ contents: 'read' });
+  });
+
+  it('throws on invalid level', () => {
+    expect(() => index.parsePermissionsInput('contents: oops')).toThrow(
+      /Invalid permission level/
+    );
+  });
+
+  it('throws when the document is not a mapping', () => {
+    expect(() => index.parsePermissionsInput('just-a-scalar')).toThrow(
+      /YAML mapping/
+    );
+    expect(() => index.parsePermissionsInput('- contents: read')).toThrow(
+      /YAML mapping/
+    );
+  });
+
+  it('throws on YAML syntax errors', () => {
+    expect(() =>
+      index.parsePermissionsInput('contents: read\n  bad: [')
+    ).toThrow(/Could not parse permissions as YAML/);
   });
 });
