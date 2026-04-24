@@ -64,4 +64,36 @@ describe('post', () => {
       `Error while revoking token: ${error.message}`
     );
   });
+
+  it('treats 401 as an already-revoked no-op', async () => {
+    const token = 'gha_token';
+    const error = Object.assign(new Error('Bad credentials'), { status: 401 });
+    vi.mocked(core.getState).mockReturnValue(token);
+    vi.mocked(revokeInstallationAccessToken).mockRejectedValue(error);
+
+    await post.post();
+    expect(postSpy).toHaveReturned();
+
+    expect(github.getOctokit).toHaveBeenCalledWith(token);
+    expect(core.info).toHaveBeenCalledWith('Token was already revoked');
+    expect(core.warning).not.toHaveBeenCalled();
+  });
+
+  it('awaits the revocation promise', async () => {
+    const token = 'gha_token';
+    let resolved = false;
+    vi.mocked(core.getState).mockReturnValue(token);
+    vi.mocked(revokeInstallationAccessToken).mockImplementation(
+      async () =>
+        await new Promise<void>(resolve =>
+          setTimeout(() => {
+            resolved = true;
+            resolve();
+          }, 0)
+        )
+    );
+
+    await post.post();
+    expect(resolved).toBe(true);
+  });
 });

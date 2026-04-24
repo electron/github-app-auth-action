@@ -24,6 +24,18 @@ inputs:
       user'
     required: false
     default: false
+  permissions:
+    description: |
+      Optional permission narrowing for the minted installation token.
+      Newline-delimited `<permission>: <level>` pairs, where level is
+      read | write | admin. Permissions listed here must be a subset of
+      the App's installation permissions; unlisted permissions are not
+      granted to the token. Example:
+        permissions: |
+          contents: read
+          issues: write
+    required: false
+    default: ''
 
 outputs:
   token:

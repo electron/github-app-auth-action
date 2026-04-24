@@ -25396,11 +25396,14 @@ async function post() {
   if (token) {
     try {
       const octokit = getOctokit(token);
-      octokit.rest.apps.revokeInstallationAccessToken();
+      await octokit.rest.apps.revokeInstallationAccessToken();
       core.info("Token revoked");
     } catch (error) {
-      if (error instanceof Error)
+      if (error && typeof error === "object" && "status" in error && error.status === 401) {
+        core.info("Token was already revoked");
+      } else if (error instanceof Error) {
         core.warning(`Error while revoking token: ${error.message}`);
+      }
     }
   }
 }
