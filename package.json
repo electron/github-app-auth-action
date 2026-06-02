@@ -51,7 +51,7 @@
     "prettier": "^3.0.2",
     "prettier-eslint": "^15.0.1",
     "typescript": "^5.2.2",
-    "vitest": "^4.0.5"
+    "vitest": "^4.1.0"
   },
   "resolutions": {
     "@typescript-eslint/typescript-estree@npm:6.21.0/minimatch": "^9.0.7",
