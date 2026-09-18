@@ -1,0 +1,47 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import", "vitest"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "node": true,
+    "es2023": true
+  },
+  "rules": {
+    "no-var": "error",
+    "eqeqeq": "error",
+    "guard-for-in": "error",
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all"
+      }
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "vars": "all",
+        "args": "after-used",
+        "ignoreRestSiblings": true
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/array-type": "error",
+    "typescript/consistent-type-assertions": "error",
+    "typescript/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpressions": true
+      }
+    ],
+    "typescript/no-inferrable-types": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "typescript/no-require-imports": "error",
+    "typescript/prefer-for-of": "warn",
+    "typescript/prefer-function-type": "warn",
+    "vitest/require-mock-type-parameters": "off"
+  },
+  "ignorePatterns": ["dist/", "coverage/", "node_modules/"]
+}
