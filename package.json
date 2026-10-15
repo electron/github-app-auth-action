@@ -13,7 +13,7 @@
   },
   "main": "dist/index.js",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "bundle": "yarn format:write && yarn package",
@@ -36,15 +36,16 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@types/node": "^20.5.6",
-    "@vitest/coverage-v8": "^4.0.5",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.0.1",
     "esbuild": "^0.28.1",
     "husky": "^9.1.6",
     "oxlint": "^1.81.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.0.2",
     "typescript": "^5.2.2",
-    "vitest": "^4.1.11"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
   },
   "resolutions": {
     "fsevents": "npm:@electron/fsevents@2.3.3-fork"
